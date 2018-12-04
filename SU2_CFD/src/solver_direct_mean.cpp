@@ -15772,6 +15772,7 @@ void CNSSolver::SetTime_Step(CGeometry *geometry, CSolver **solver_container, CC
   bool grid_movement = config->GetGrid_Movement();
   bool dual_time = ((config->GetUnsteady_Simulation() == DT_STEPPING_1ST) ||
                     (config->GetUnsteady_Simulation() == DT_STEPPING_2ND));
+  bool rug_heat_model = config->GetKind_Hrug_Model() != NONE;
   
   Min_Delta_Time = 1.E6; Max_Delta_Time = 0.0;
   
@@ -15823,8 +15824,8 @@ void CNSSolver::SetTime_Step(CGeometry *geometry, CSolver **solver_container, CC
     Mean_LaminarVisc = 0.5*(node[iPoint]->GetLaminarViscosity() + node[jPoint]->GetLaminarViscosity());
     Mean_EddyVisc    = 0.5*(node[iPoint]->GetEddyViscosity() + node[jPoint]->GetEddyViscosity());
     Mean_Density     = 0.5*(node[iPoint]->GetSolution(0) + node[jPoint]->GetSolution(0));
-    Mean_deltaPrT    = 0.5*(solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT() 
-    + solver_container[TURB_SOL]->node[jPoint]->GetdeltaPrT());
+    if (rug_heat_model) Mean_deltaPrT    = 0.5*(solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT() 
+    	+ solver_container[TURB_SOL]->node[jPoint]->GetdeltaPrT());
     
     Lambda_1 = (4.0/3.0)*(Mean_LaminarVisc + Mean_EddyVisc);
     su2double effective_Prandtl_Turb = Prandtl_Turb + Mean_deltaPrT;
@@ -15876,7 +15877,7 @@ void CNSSolver::SetTime_Step(CGeometry *geometry, CSolver **solver_container, CC
       Mean_LaminarVisc = node[iPoint]->GetLaminarViscosity();
       Mean_EddyVisc    = node[iPoint]->GetEddyViscosity();
       Mean_Density     = node[iPoint]->GetSolution(0);
-      Mean_deltaPrT    = solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT();
+      if(rug_heat_model) Mean_deltaPrT    = solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT();
       
       su2double effective_Prandtl_Turb = Prandtl_Turb + Mean_deltaPrT;
       Lambda_1 = (4.0/3.0)*(Mean_LaminarVisc + Mean_EddyVisc);
@@ -16050,6 +16051,7 @@ void CNSSolver::Friction_Forces(CGeometry *geometry, CSolver **solver_container,
   su2double Prandtl_Lam     = config->GetPrandtl_Lam();
   bool axisymmetric         = config->GetAxisymmetric();
   bool rug_spalart_allmaras = config->GetKind_Turb_Model() == SA_ROUGH;
+  bool rug_heat_model        = config->GetKind_Hrug_Model() != NONE;
 
   /*--- Evaluate reference values for non-dimensionalization.
    For dynamic meshes, use the motion Mach number as a reference value
@@ -16143,8 +16145,8 @@ void CNSSolver::Friction_Forces(CGeometry *geometry, CSolver **solver_container,
         /*--- if rough wall then eddy viscosity not zero at wall ---*/
         if (rug_spalart_allmaras) {
           Eddy_Viscosity = node[iPoint]->GetEddyViscosity();
-          Mean_deltaPrT = solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT();
-          /*--- cout << "delta PrT in solver" << Mean_deltaPrT << "." << endl; ---*/
+          if (rug_heat_model) Mean_deltaPrT = solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT();
+          /*--- cout << "delta PrT in solver" << Mean_deltaPrT << "." << endl; ---*/ 
         }
         Total_Viscosity = Viscosity + Eddy_Viscosity;
         
@@ -16712,6 +16714,7 @@ void CNSSolver::BC_Isothermal_Wall(CGeometry *geometry, CSolver **solver_contain
   bool implicit = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
   bool grid_movement  = config->GetGrid_Movement();
   bool rug_spalart_allmaras = config->GetKind_Turb_Model() == SA_ROUGH;
+  bool rug_heat_model        = config->GetKind_Hrug_Model() != NONE;
   
   /*--- Identify the boundary ---*/
   
@@ -16791,11 +16794,11 @@ void CNSSolver::BC_Isothermal_Wall(CGeometry *geometry, CSolver **solver_contain
       
       laminar_viscosity    = node[iPoint]->GetLaminarViscosity();
       eddy_viscosity       = node[iPoint]->GetEddyViscosity();
-      if (rug_spalart_allmaras) {
+      if (rug_heat_model) {
           Mean_deltaPrT = solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT();
         }
       effective_Prandtl_Turb = Mean_deltaPrT + Prandtl_Turb;  
-      thermal_conductivity = Cp * ( laminar_viscosity/Prandtl_Lam + eddy_viscosity/Prandtl_Turb);
+      thermal_conductivity = Cp * ( laminar_viscosity/Prandtl_Lam + eddy_viscosity/effective_Prandtl_Turb);
       
       // work in progress on real-gases...
       //thermal_conductivity = node[iPoint]->GetThermalConductivity();

@@ -1474,18 +1474,30 @@ void CTurbSASolver::Postprocessing(CGeometry *geometry, CSolver **solver_contain
   su2double rho = 0.0, mu = 0.0, nu, *nu_hat, muT, Ji, Ji_3, fv1;
   su2double cv1_3 = 7.1*7.1*7.1, kappa = 0.41;
   su2double G=0.0,F=0.0,deltaPrT = 0.0,ks,ratio,utau,ksplus,delta_uplus,dist;
+  su2double A, B, roughness_height, Scorr,Ckc,Prandtl_Lam,alpha,beta;
   unsigned long iPoint;
   
   bool compressible = (config->GetKind_Regime() == COMPRESSIBLE);
   bool incompressible = (config->GetKind_Regime() == INCOMPRESSIBLE);
   bool neg_spalart_allmaras = (config->GetKind_Turb_Model() == SA_NEG);
   bool rug_spalart_allmaras = (config->GetKind_Turb_Model() == SA_ROUGH);
-  su2double roughness_height = (config->GetRoughness_Height());
-  su2double Scorr = (config->GetSurface_Ratio_Corrected());
+  bool rug_heat_aupoix = (config->GetKind_Hrug_Model() == HAX);
+  bool rug_heat_kays_crawford = (config->GetKind_Hrug_Model() == HKC);
+  bool rug_heat_none = (config->GetKind_Hrug_Model() == NONE);
   
+  if (rug_heat_aupoix) {
   /*--- Constant for delta Prandtl turbulent for Aupoix model ---*/ 
-  su2double A = (0.0155-0.0035*Scorr)*(1.0-exp(-12.*(Scorr-1.0)));
-  su2double B = -0.08+0.25*exp(-10*(Scorr-1.0));
+    Scorr = (config->GetSurface_Ratio_Corrected());
+  	A = (0.0155-0.0035*Scorr)*(1.0-exp(-12.*(Scorr-1.0)));
+  	B = -0.08+0.25*exp(-10.*(Scorr-1.0));
+  	roughness_height = (config->GetRoughness_Height());
+  }
+  if (rug_heat_kays_crawford) {
+     Ckc=(config->GetRoughness_Constant()); 
+     alpha= (config->GetSandgrain_Alpha());
+     beta=(config->GetPrandtl_Beta());
+     Prandtl_Lam     = config->GetPrandtl_Lam();
+ }    
   
   /*--- Compute eddy viscosity ---*/
   
@@ -1510,33 +1522,56 @@ void CTurbSASolver::Postprocessing(CGeometry *geometry, CSolver **solver_contain
     muT = rho*fv1*nu_hat[0];
     
     /*--- Compute roughness effect increase on turbulent Prandtl number ---*/
-    if (rug_spalart_allmaras) {
-    	ks = geometry->node[iPoint]->GetRough();
-        if ((ks > 1e-10) && (roughness_height > 1e-12))  { 
+    if (rug_heat_aupoix) {
+    	ks = geometry->node[iPoint]->GetRough(); 
+        if (ks > 1e-10)  { 
         	dist = geometry->node[iPoint]->GetWall_Distance();
-        	ratio = dist/(roughness_height);
+        	ratio = dist/(roughness_height+1e-12);
         	/*--- Variable F and G ---*/
         	if (ratio < 5.0 ) {
         		G=exp(-ratio);
     		/*--- approximate nu_hat=kappa*utau*d ---*/
-        		utau = nu_hat[0]/(sqrt(kappa)*(dist+0.03*ks));
+        		utau = nu_hat[0]/(kappa*(dist+0.03*ks));
         		ksplus = ks*utau/nu;
         		delta_uplus = 1./sqrt(kappa)*log(1.0+ksplus/exp(1.3325));
-        		F = A*pow(delta_uplus,2)+B*delta_uplus;
+        		F = max(0.,A*pow(delta_uplus,2)+B*delta_uplus);
         		/*--- cout << "F " << F << " and G " << G << "." << endl; ---*/
         		deltaPrT = F*G;
-        		/*--- cout << "deltaPrT " << deltaPrT << "." << endl; ---*/	 
+        		/*--- cout << "deltaPrT hax " << deltaPrT << "  " << F << endl;	---*/ 
         		} else {      	
         		deltaPrT=0.0;
         		}
     		node[iPoint]->SetdeltaPrT(deltaPrT); 
     		}
     	}
+    if (rug_heat_kays_crawford) {
+    	ks = geometry->node[iPoint]->GetRough();
+        if (ks > 1e-10)  { 
+        	dist = geometry->node[iPoint]->GetWall_Distance();
+        	ratio = dist/(ks+1e-12);
+        	/*--- Variable F and G ---*/
+        	if (ratio < 5.0 ) {
+        		G=exp(-ratio);
+    		/*--- approximate nu_hat=kappa*utau*d ---*/
+        		utau = nu_hat[0]/(sqrt(kappa)*(dist+0.03*ks));
+        		ksplus = ks*utau/nu;
+        		F = 0.136/Ckc*pow(ksplus,alpha)*pow(Prandtl_Lam,beta);
+        		/*--- cout << "F " << F << " and G " << G << "." << endl; ---*/
+        		deltaPrT = F*G;
+        		/*--- cout << "deltaPrT hkc" << deltaPrT << "." << endl; ---*/	 
+        		} else {      	
+        		deltaPrT=0.0;
+        		}
+    		node[iPoint]->SetdeltaPrT(deltaPrT); 
+    		}
+    	}
+    		
+    	if (rug_heat_none) node[iPoint]->SetdeltaPrT(0.0); 
+    	
     			
     if (neg_spalart_allmaras && (muT < 0.0)) muT = 0.0;
     
     node[iPoint]->SetmuT(muT);
-    
     
   }
   
