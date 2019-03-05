@@ -1497,6 +1497,7 @@ void CTurbSASolver::Postprocessing(CGeometry *geometry, CSolver **solver_contain
      alpha= (config->GetSandgrain_Alpha());
      beta=(config->GetPrandtl_Beta());
      Prandtl_Lam     = config->GetPrandtl_Lam();
+     roughness_height = config->GetRoughness_Height(); %for the 2 parameters model 
  }    
   
   /*--- Compute eddy viscosity ---*/
@@ -1548,7 +1549,7 @@ void CTurbSASolver::Postprocessing(CGeometry *geometry, CSolver **solver_contain
     	ks = geometry->node[iPoint]->GetRough();
         if (ks > 1e-10)  { 
         	dist = geometry->node[iPoint]->GetWall_Distance();
-        	ratio = dist/(ks+1e-12);
+        	ratio = dist/(roughness_height+1e-12);
         	/*--- Variable F and G ---*/
         	if (ratio < 5.0 ) {
         		G=exp(-ratio);
