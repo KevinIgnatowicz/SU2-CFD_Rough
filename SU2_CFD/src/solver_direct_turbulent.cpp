@@ -1497,7 +1497,7 @@ void CTurbSASolver::Postprocessing(CGeometry *geometry, CSolver **solver_contain
      alpha= (config->GetSandgrain_Alpha());
      beta=(config->GetPrandtl_Beta());
      Prandtl_Lam     = config->GetPrandtl_Lam();
-     roughness_height = config->GetRoughness_Height(); %for the 2 parameters model 
+     roughness_height = config->GetRoughness_Height(); //for the 2 parameters model 
  }    
   
   /*--- Compute eddy viscosity ---*/
