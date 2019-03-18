@@ -1555,7 +1555,7 @@ void CTurbSASolver::Postprocessing(CGeometry *geometry, CSolver **solver_contain
     		/*--- approximate nu_hat=kappa*utau*d ---*/
         		utau = nu_hat[0]/(sqrt(kappa)*(dist+0.03*ks));
         		ksplus = ks*utau/nu;
-        		F = 0.136/(Ckc*pow(ksplus,alpha)*pow(Prandtl_Lam,beta));
+        		F = 0.136/Ckc*pow(ksplus,alpha)*pow(Prandtl_Lam,beta);
         		/*--- cout << "F " << F << " and G " << G << "." << endl; ---*/
         		deltaPrT = F*G;
         		/*--- cout << "deltaPrT hkc" << deltaPrT << "." << endl; ---*/	 
