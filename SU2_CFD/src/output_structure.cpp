@@ -130,11 +130,13 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
   unsigned long iPoint, iVertex, Global_Index;
   su2double PressCoeff = 0.0, SkinFrictionCoeff[3];
   su2double xCoord = 0.0, yCoord = 0.0, zCoord = 0.0, Mach, Pressure;
+  su2double ks = 0.0;
   char cstr[200];
   
   unsigned short solver = config->GetKind_Solver();
   unsigned short nDim = geometry->GetnDim();
-  
+  bool rug_spalart_allmaras = (config->GetKind_Turb_Model() == SA_ROUGH);
+  cout << "FM: SetSurfaceCSV_Flow ....................." << endl;
 #ifndef HAVE_MPI
   
   unsigned short iDim;
@@ -166,11 +168,14 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
   if (nDim == 3) SurfFlow_file << "\"z_coord\", ";
   SurfFlow_file << "\"Pressure\", \"Pressure_Coefficient\", ";
   
+  if (rug_spalart_allmaras) SurfFlow_file << "\"Equivalent_Sand_Grain_Roughness\",  "; 
+  
   switch (solver) {
     case EULER : SurfFlow_file <<  "\"Mach_Number\"" << "\n"; break;
     case NAVIER_STOKES: case RANS:
       if (nDim == 2) SurfFlow_file <<  "\"Skin_Friction_Coefficient_X\", \"Skin_Friction_Coefficient_Y\", \"h\"" << "\n";
       if (nDim == 3) SurfFlow_file <<  "\"Skin_Friction_Coefficient_X\", \"Skin_Friction_Coefficient_Y\", \"Skin_Friction_Coefficient_Z\", \"Heat_Flux\"" << "\n";
+      
       break;
   }
   
@@ -195,6 +200,12 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
         SurfFlow_file << scientific << Global_Index << ", " << xCoord << ", " << yCoord << ", ";
         if (nDim == 3) SurfFlow_file << scientific << zCoord << ", ";
         SurfFlow_file << scientific << Pressure << ", " << PressCoeff << ", ";
+        
+        if (rug_spalart_allmaras) {
+          ks = geometry->node[iPoint]->GetRough();
+          SurfFlow_file << scientific << ks << ", ";
+        }
+        
         switch (solver) {
           case EULER :
             Mach = sqrt(FlowSolver->node[iPoint]->GetVelocity2()) / FlowSolver->node[iPoint]->GetSoundSpeed();
@@ -265,6 +276,9 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
   su2double *Buffer_Send_CPress = new su2double [MaxLocalVertex_Surface];
   su2double *Buffer_Recv_CPress = NULL;
   
+  su2double *Buffer_Send_ks = new su2double [MaxLocalVertex_Surface];
+  su2double *Buffer_Recv_ks = NULL;
+  
   su2double *Buffer_Send_Mach = new su2double [MaxLocalVertex_Surface];
   su2double *Buffer_Recv_Mach = NULL;
   
@@ -291,6 +305,7 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
     if (nDim == 3) Buffer_Recv_Coord_z = new su2double [nProcessor*MaxLocalVertex_Surface];
     Buffer_Recv_Press   = new su2double [nProcessor*MaxLocalVertex_Surface];
     Buffer_Recv_CPress  = new su2double [nProcessor*MaxLocalVertex_Surface];
+    Buffer_Recv_ks  = new su2double [nProcessor*MaxLocalVertex_Surface];
     Buffer_Recv_Mach    = new su2double [nProcessor*MaxLocalVertex_Surface];
     Buffer_Recv_SkinFriction_x = new su2double [nProcessor*MaxLocalVertex_Surface];
     Buffer_Recv_SkinFriction_y = new su2double [nProcessor*MaxLocalVertex_Surface];
@@ -311,6 +326,7 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
         if (geometry->node[iPoint]->GetDomain()) {
           Buffer_Send_Press[nVertex_Surface] = FlowSolver->node[iPoint]->GetPressure();
           Buffer_Send_CPress[nVertex_Surface] = FlowSolver->GetCPressure(iMarker, iVertex);
+          if (rug_spalart_allmaras) Buffer_Send_ks[nVertex_Surface] = geometry->node[iPoint]->GetRough();
           Buffer_Send_Coord_x[nVertex_Surface] = geometry->node[iPoint]->GetCoord(0);
           Buffer_Send_Coord_y[nVertex_Surface] = geometry->node[iPoint]->GetCoord(1);
           if (nDim == 3) { Buffer_Send_Coord_z[nVertex_Surface] = geometry->node[iPoint]->GetCoord(2); }
@@ -343,6 +359,8 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
   if (nDim == 3) SU2_MPI::Gather(Buffer_Send_Coord_z, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_Coord_z, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
   SU2_MPI::Gather(Buffer_Send_Press, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_Press, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
   SU2_MPI::Gather(Buffer_Send_CPress, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_CPress, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+  if (rug_spalart_allmaras) SU2_MPI::Gather(Buffer_Send_ks, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_ks, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+  
   if (solver == EULER) SU2_MPI::Gather(Buffer_Send_Mach, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_Mach, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
   if ((solver == NAVIER_STOKES) || (solver == RANS)) {
     SU2_MPI::Gather(Buffer_Send_SkinFriction_x, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_SkinFriction_x, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
@@ -383,6 +401,8 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
     if (nDim == 3) SurfFlow_file << "\"z_coord\", ";
     SurfFlow_file << "\"Pressure\", \"Pressure_Coefficient\", ";
     
+    if (rug_spalart_allmaras) SurfFlow_file << "\"Equivalent_Sand_Grain_Roughness\",  "; 
+    
     switch (solver) {
       case EULER : SurfFlow_file <<  "\"Mach_Number\"" << "\n"; break;
       case NAVIER_STOKES: case RANS:
@@ -412,6 +432,11 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
         SurfFlow_file << scientific << Global_Index << ", " << xCoord << ", " << yCoord << ", ";
         if (nDim == 3) SurfFlow_file << scientific << zCoord << ", ";
         SurfFlow_file << scientific << Pressure << ", " << PressCoeff << ", ";
+        if (rug_spalart_allmaras) {
+          ks = Buffer_Recv_ks[Total_Index];;
+          cout << "FM: ks " << ks << endl;
+          SurfFlow_file << scientific << ks << ", ";
+        }
         
         /*--- Write the solver-dependent part of the data ---*/
         switch (solver) {
