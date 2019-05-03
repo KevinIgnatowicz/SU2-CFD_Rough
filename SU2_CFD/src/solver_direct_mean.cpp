@@ -10481,6 +10481,11 @@ void CEulerSolver::BC_Far_Field(CGeometry *geometry, CSolver **solver_container,
         if (config->GetKind_Turb_Model() == SST)
           visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0),
                                               solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
+                                            
+        /*--- Turbulent heat transfer model ---*/
+        if (config->GetKind_Hrug_Model() != NONE)
+          visc_numerics->SetdeltaPrT(solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT(),
+                                solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT());
         
         /*--- Compute and update viscous residual ---*/
         
@@ -11012,6 +11017,11 @@ void CEulerSolver::BC_Riemann(CGeometry *geometry, CSolver **solver_container,
         /*--- Turbulent kinetic energy ---*/
         if (config->GetKind_Turb_Model() == SST)
           visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0), solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
+        
+        /*--- Turbulent heat transfer model ---*/
+        if (config->GetKind_Hrug_Model() != NONE)
+          visc_numerics->SetdeltaPrT(solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT(),
+                                solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT());
         
         /*--- Compute and update residual ---*/
         visc_numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
@@ -11811,6 +11821,11 @@ void CEulerSolver::BC_NonReflecting(CGeometry *geometry, CSolver **solver_contai
         if (config->GetKind_Turb_Model() == SST)
           visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0), solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
         
+        /*--- Turbulent heat transfer model ---*/
+        if (config->GetKind_Hrug_Model() != NONE)
+          visc_numerics->SetdeltaPrT(solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT(),
+                                solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT());
+        
         /*--- Compute and update residual ---*/
         visc_numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
         LinSysRes.SubtractBlock(iPoint, Residual);
@@ -12140,6 +12155,11 @@ void CEulerSolver::BC_Inlet(CGeometry *geometry, CSolver **solver_container,
         if (config->GetKind_Turb_Model() == SST)
           visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0), solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
         
+        /*--- Turbulent heat transfer model ---*/
+        if (config->GetKind_Hrug_Model() != NONE)
+          visc_numerics->SetdeltaPrT(solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT(),
+                                solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT());
+        
         /*--- Compute and update residual ---*/
         
         visc_numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
@@ -12315,6 +12335,11 @@ void CEulerSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
         if (config->GetKind_Turb_Model() == SST)
           visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0), solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
         
+        /*--- Turbulent heat transfer model ---*/
+        if (config->GetKind_Hrug_Model() != NONE)
+           visc_numerics->SetdeltaPrT(solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT(),
+                                 solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT());
+                                 
         /*--- Compute and update residual ---*/
         visc_numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
         LinSysRes.SubtractBlock(iPoint, Residual);
@@ -12457,6 +12482,11 @@ void CEulerSolver::BC_Supersonic_Inlet(CGeometry *geometry, CSolver **solver_con
         if (config->GetKind_Turb_Model() == SST)
           visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0), solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
         
+        /*--- Turbulent heat transfer model ---*/
+        if (config->GetKind_Hrug_Model() != NONE)
+           visc_numerics->SetdeltaPrT(solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT(),
+                                 solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT());
+                                 
         /*--- Compute and update residual ---*/
         
         visc_numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
@@ -12575,6 +12605,11 @@ void CEulerSolver::BC_Supersonic_Outlet(CGeometry *geometry, CSolver **solver_co
         
         if (config->GetKind_Turb_Model() == SST)
           visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0), solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
+        
+        /*--- Turbulent heat transfer model ---*/
+        if (config->GetKind_Hrug_Model() != NONE)
+           visc_numerics->SetdeltaPrT(solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT(),
+                                 solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT());
         
         /*--- Compute and update residual ---*/
         
@@ -12793,6 +12828,11 @@ void CEulerSolver::BC_Engine_Inflow(CGeometry *geometry, CSolver **solver_contai
         
         if (config->GetKind_Turb_Model() == SST)
           visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0), solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
+        
+        /*--- Turbulent heat transfer model ---*/
+        if (config->GetKind_Hrug_Model() != NONE)
+           visc_numerics->SetdeltaPrT(solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT(),
+                                 solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT());
         
         /*--- Compute and update residual ---*/
         
@@ -13045,6 +13085,10 @@ void CEulerSolver::BC_Engine_Exhaust(CGeometry *geometry, CSolver **solver_conta
         if (config->GetKind_Turb_Model() == SST)
           visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0), solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
         
+        /*--- Turbulent heat transfer model ---*/
+        if (config->GetKind_Hrug_Model() != NONE)
+           visc_numerics->SetdeltaPrT(solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT(),
+                                 solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT());
         /*--- Compute and update residual ---*/
         
         visc_numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
@@ -13634,6 +13678,10 @@ void CEulerSolver::BC_ActDisk(CGeometry *geometry, CSolver **solver_container, C
                     if (config->GetKind_Turb_Model() == SST)
                         visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0), solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
 
+                    /*--- Turbulent heat transfer model ---*/
+                    if (config->GetKind_Hrug_Model() != NONE)
+                      visc_numerics->SetdeltaPrT(solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT(),
+                                            solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT());
                     /*--- Compute and update residual ---*/
 
                     visc_numerics->ComputeResidual(Residual, Jacobian_i, Jacobian_j, config);
@@ -16000,6 +16048,11 @@ void CNSSolver::Viscous_Residual(CGeometry *geometry, CSolver **solver_container
     if (config->GetKind_Turb_Model() == SST)
       numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0),
                                      solver_container[TURB_SOL]->node[jPoint]->GetSolution(0));
+                                     
+    /*--- Turbulent heat transfer model ---*/
+    if (config->GetKind_Hrug_Model() != NONE)
+      numerics->SetdeltaPrT(solver_container[TURB_SOL]->node[iPoint]->GetdeltaPrT(),
+                            solver_container[TURB_SOL]->node[jPoint]->GetdeltaPrT());
     
     /*--- Compute and update residual ---*/
     

@@ -1573,6 +1573,7 @@ void CNumerics::GetViscousFlux(su2double *val_primvar, su2double **val_gradprimv
   su2double heat_flux_factor = Cp * (val_laminar_viscosity/Prandtl_Lam + val_eddy_viscosity/effective_Prandtl_Turb);
 
   su2double div_vel = 0.0;
+  //if (val_deltaPrT > 0) cout << "FM: numerics_sructure deltaPrt " << val_deltaPrT << endl; 
   for (unsigned short iDim = 0 ; iDim < nDim; iDim++)
     div_vel += val_gradprimvar[iDim+1][iDim];
 
@@ -1635,7 +1636,7 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
   unsigned short iVar, iDim, jDim;
   su2double total_viscosity, heat_flux_factor, div_vel, Cp, Density;
   su2double effective_Prandtl_Turb;
-
+  //if (val_deltaPrT > 0) cout << "FM: numerics_sructure 2 deltaPrt " << val_deltaPrT << endl; 
   Density = val_primvar[nDim+2];
   total_viscosity = val_laminar_viscosity + val_eddy_viscosity;
   Cp = (Gamma / Gamma_Minus_One) * Gas_Constant;
@@ -1702,7 +1703,7 @@ void CNumerics::GetViscousProjFlux(su2double *val_primvar,
   unsigned short iVar, iDim, jDim;
   su2double total_viscosity, heat_flux_factor, div_vel, Density, effective_Prandtl_Turb;
   Density = val_primvar[nDim+2];
-
+  //if (val_deltaPrT > 0)cout << "FM: numerics_sructure 3 deltaPrt " << val_deltaPrT << endl; 
   total_viscosity = val_laminar_viscosity + val_eddy_viscosity;
   effective_Prandtl_Turb = val_deltaPrT + Prandtl_Turb;
   heat_flux_factor = val_thermal_conductivity + val_heat_capacity_cp*val_eddy_viscosity/effective_Prandtl_Turb;

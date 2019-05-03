@@ -78,9 +78,11 @@ su2double CTurbVariable::GetmuT() { return muT; }
 
 void CTurbVariable::SetmuT(su2double val_muT) { muT = val_muT; }
 
-su2double CTurbVariable::GetdeltaPrT() { return deltaPrT; }
+su2double CTurbVariable::GetdeltaPrT() { 
+ return deltaPrT; }
 
-void CTurbVariable::SetdeltaPrT(su2double val_deltaPrT) { deltaPrT = val_deltaPrT; }
+void CTurbVariable::SetdeltaPrT(su2double val_deltaPrT) { 
+  deltaPrT = val_deltaPrT; }
 
 CTurbSAVariable::CTurbSAVariable(void) : CTurbVariable() { }
 

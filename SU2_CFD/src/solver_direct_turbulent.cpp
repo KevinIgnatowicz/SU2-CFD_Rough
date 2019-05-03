@@ -1475,6 +1475,7 @@ void CTurbSASolver::Postprocessing(CGeometry *geometry, CSolver **solver_contain
   su2double cv1_3 = 7.1*7.1*7.1, kappa = 0.41;
   su2double G=0.0,F=0.0,deltaPrT = 0.0,ks,ratio,utau,ksplus,delta_uplus,dist;
   su2double A, B, roughness_height, Scorr,Ckc,Prandtl_Lam,alpha,beta;
+  su2double gksplus, RekLower=5.0, RekUpper=70.0;
   unsigned long iPoint;
   
   bool compressible = (config->GetKind_Regime() == COMPRESSIBLE);
@@ -1554,11 +1555,22 @@ void CTurbSASolver::Postprocessing(CGeometry *geometry, CSolver **solver_contain
         	if (ratio < 5.0 ) {
         		G=exp(-ratio);
     		/*--- approximate nu_hat=kappa*utau*d ---*/
-        		utau = nu_hat[0]/(sqrt(kappa)*(dist+0.03*ks));
+        		utau = nu_hat[0]/(kappa*(dist+0.03*ks));
         		ksplus = ks*utau/nu;
         		F = 0.136/Ckc*pow(ksplus,alpha)*pow(Prandtl_Lam,beta);
+        		/*--- g function for transitionally rough Roughness Reynold number ---*/
+        		/*--- see Ligrani, Kays, Moffat ---*/
+        		gksplus = 1.0;
+        		//cout << "FM: ksplus " << ksplus << endl;
+        		if ( ksplus < RekUpper ) { 
+        		  if ( ksplus <= RekLower ) {gksplus = 0.0;} else {
+        		  gksplus = (log(ksplus) -log (RekLower))/(log(RekUpper)-log(RekLower));
+        		  }
+        		  }
+        		  //cout << "FM: gksplus " << gksplus << endl;
         		/*--- cout << "F " << F << " and G " << G << "." << endl; ---*/
-        		deltaPrT = F*G;
+        		deltaPrT = gksplus*F*G;
+        		//cout << "FM: gksplus " << gksplus << " F*G " << F*G << endl;
         		/*--- cout << "deltaPrT hkc" << deltaPrT << "." << endl; ---*/	 
         		} else {      	
         		deltaPrT=0.0;
