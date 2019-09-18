@@ -10149,8 +10149,8 @@ void COutput::SetResult_Files_Parallel(CSolver ****solver_container,
      defined within each of the "physics" output child classes that loads
      the local data for that particular problem alone. ---*/
     
-    if (rank == MASTER_NODE)
-      cout << "Loading solution output data locally on each rank." << endl;
+    //if (rank == MASTER_NODE)
+      //cout << "Loading solution output data locally on each rank." << endl;
     
     switch (config[iZone]->GetKind_Solver()) {
       case EULER : case NAVIER_STOKES: case RANS :
