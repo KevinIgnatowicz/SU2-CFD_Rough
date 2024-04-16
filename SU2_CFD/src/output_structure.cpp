@@ -128,7 +128,7 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
   
   unsigned short iMarker;
   unsigned long iPoint, iVertex, Global_Index;
-  su2double PressCoeff = 0.0, SkinFrictionCoeff[3];
+  su2double PressCoeff = 0.0, SkinFrictionCoeff[3], HeatFlux;
   su2double xCoord = 0.0, yCoord = 0.0, zCoord = 0.0, Mach, Pressure;
   su2double ks = 0.0, deltaprt = 0.0;
   char cstr[200];
@@ -142,7 +142,6 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
 #ifndef HAVE_MPI
   
   unsigned short iDim;
-  su2double HeatFlux;
   char buffer [50];
   ofstream SurfFlow_file;
   
@@ -170,13 +169,13 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
   if (nDim == 3) SurfFlow_file << "\"z_coord\", ";
   SurfFlow_file << "\"Pressure\", \"Pressure_Coefficient\", ";
   
-  if (rug_spalart_allmaras) SurfFlow_file << "\"Equivalent_Sand_Grain_Roughness\",  ";
-  if (rug_prandtl_model) SurfFlow_file << "\"Delta PrT\",  "; 
+  if (rug_spalart_allmaras) SurfFlow_file << "\"Equivalent_Sand_Grain_Roughness\", ";
+  if (rug_prandtl_model) SurfFlow_file << "\"Delta PrT\", "; 
   
   switch (solver) {
     case EULER : SurfFlow_file <<  "\"Mach_Number\"" << "\n"; break;
     case NAVIER_STOKES: case RANS:
-      if (nDim == 2) SurfFlow_file <<  "\"Skin_Friction_Coefficient_X\", \"Skin_Friction_Coefficient_Y\", \"h\"" << "\n";
+      if (nDim == 2) SurfFlow_file <<  "\"Skin_Friction_Coefficient_X\", \"Skin_Friction_Coefficient_Y\", \"Heat_Flux\"" << "\n";
       if (nDim == 3) SurfFlow_file <<  "\"Skin_Friction_Coefficient_X\", \"Skin_Friction_Coefficient_Y\", \"Skin_Friction_Coefficient_Z\", \"Heat_Flux\"" << "\n";
       
       break;
@@ -360,6 +359,7 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
             Buffer_Send_SkinFriction_x[nVertex_Surface] = FlowSolver->GetCSkinFriction(iMarker, iVertex, 0);
             Buffer_Send_SkinFriction_y[nVertex_Surface] = FlowSolver->GetCSkinFriction(iMarker, iVertex, 1);
             if (nDim == 3) Buffer_Send_SkinFriction_z[nVertex_Surface] = FlowSolver->GetCSkinFriction(iMarker, iVertex, 2);
+            Buffer_Send_HeatTransfer[nVertex_Surface] = FlowSolver->GetHeatFlux(iMarker, iVertex);
           }
           nVertex_Surface++;
         }
@@ -379,7 +379,8 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
     SU2_MPI::Gather(Buffer_Send_SkinFriction_x, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_SkinFriction_x, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
     SU2_MPI::Gather(Buffer_Send_SkinFriction_y, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_SkinFriction_y, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
     if (nDim == 3) SU2_MPI::Gather(Buffer_Send_SkinFriction_z, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_SkinFriction_z, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-  }
+    SU2_MPI::Gather(Buffer_Send_HeatTransfer, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_HeatTransfer, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);  
+}
   SU2_MPI::Gather(Buffer_Send_GlobalIndex, MaxLocalVertex_Surface, MPI_UNSIGNED_LONG, Buffer_Recv_GlobalIndex, MaxLocalVertex_Surface, MPI_UNSIGNED_LONG, MASTER_NODE, MPI_COMM_WORLD);
   
   /*--- The master node unpacks the data and writes the surface CSV file ---*/
@@ -414,14 +415,14 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
     if (nDim == 3) SurfFlow_file << "\"z_coord\", ";
     SurfFlow_file << "\"Pressure\", \"Pressure_Coefficient\", ";
     
-    if (rug_spalart_allmaras) SurfFlow_file << "\"Equivalent_Sand_Grain_Roughness\",  ";
-    if (rug_prandtl_model) SurfFlow_file << "\"Delta PrT\",  ";  
+    if (rug_spalart_allmaras) SurfFlow_file << "\"Equivalent_Sand_Grain_Roughness\", ";
+    if (rug_prandtl_model) SurfFlow_file << "\"Delta PrT\", ";  
     
     switch (solver) {
       case EULER : SurfFlow_file <<  "\"Mach_Number\"" << "\n"; break;
       case NAVIER_STOKES: case RANS:
-        if (nDim == 2) SurfFlow_file << "\"Skin_Friction_Coefficient_X\", \"Skin_Friction_Coefficient_Y\"" << "\n";
-        if (nDim == 3) SurfFlow_file << "\"Skin_Friction_Coefficient_X\", \"Skin_Friction_Coefficient_Y\", \"Skin_Friction_Coefficient_Z\"" << "\n";
+        if (nDim == 2) SurfFlow_file << "\"Skin_Friction_Coefficient_X\", \"Skin_Friction_Coefficient_Y\", \"Heat_Flux\"" << "\n";
+        if (nDim == 3) SurfFlow_file << "\"Skin_Friction_Coefficient_X\", \"Skin_Friction_Coefficient_Y\", \"Skin_Friction_Coefficient_Z\", \"Heat_Flux\"" << "\n";
         break;
     }
     
@@ -466,8 +467,9 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
             SkinFrictionCoeff[0] = Buffer_Recv_SkinFriction_x[Total_Index];
             SkinFrictionCoeff[1] = Buffer_Recv_SkinFriction_y[Total_Index];
             if (nDim == 3) SkinFrictionCoeff[2] = Buffer_Recv_SkinFriction_z[Total_Index];
-            if (nDim == 2) SurfFlow_file << scientific << SkinFrictionCoeff[0] << ", " << SkinFrictionCoeff[1] << "\n";
-            if (nDim == 3) SurfFlow_file << scientific << SkinFrictionCoeff[0] << ", " << SkinFrictionCoeff[1] << ", " << SkinFrictionCoeff[2] << "\n";
+            HeatFlux = Buffer_Recv_HeatTransfer[Total_Index];
+            if (nDim == 2) SurfFlow_file << scientific << SkinFrictionCoeff[0] << ", " << SkinFrictionCoeff[1] << ", " << HeatFlux << "\n";
+            if (nDim == 3) SurfFlow_file << scientific << SkinFrictionCoeff[0] << ", " << SkinFrictionCoeff[1] << ", " << SkinFrictionCoeff[2] << ", " << HeatFlux << "\n";
             break;
         }
       }

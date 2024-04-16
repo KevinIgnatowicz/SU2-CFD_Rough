@@ -445,6 +445,20 @@ inline su2double CConfig::GetSandgrain_Alpha(void) { return Sandgrain_Alpha; }
 
 inline su2double CConfig::GetPrandtl_Beta(void) { return Prandtl_Beta; }
 
+inline su2double CConfig::GetAccumulation_Parameter(void) { return Ac; }
+
+inline su2double CConfig::GetFreezing_Fraction(void) { return n0; }
+
+inline su2double CConfig::GetRoughness_Limit(void) { return Roughness_Limit; }
+
+inline su2double CConfig::GetSmooth_Width(void) { return Smooth_Width; }
+
+inline su2double CConfig::GetRoughness_Ratio(void) { return ks_k_ratio; }
+
+inline su2double CConfig::GetRoughness_Min(void) { return k_min; }
+
+inline bool CConfig::GetVariable_Roughness(void) { return Variable_Roughness; }
+
 inline su2double* CConfig::GetMassFrac_FreeStream(void) { return MassFrac_FreeStream; }
 
 inline su2double CConfig::GetLength_Reynolds(void) { return Length_Reynolds; }
@@ -636,19 +650,19 @@ inline short CConfig::GetFFD_Fix_JDir(unsigned short val_index) { return FFD_Fix
 
 inline short CConfig::GetFFD_Fix_KDir(unsigned short val_index) { return FFD_Fix_KDir[val_index]; }
 
-inline unsigned short CConfig::GetMG_PreSmooth(unsigned short val_mesh) {	
+inline unsigned short CConfig::GetMG_PreSmooth(unsigned short val_mesh) {
 	if (nMG_PreSmooth == 0) return 1;
-	else return MG_PreSmooth[val_mesh]; 
+	else return MG_PreSmooth[val_mesh];
 }
 
-inline unsigned short CConfig::GetMG_PostSmooth(unsigned short val_mesh) { 
+inline unsigned short CConfig::GetMG_PostSmooth(unsigned short val_mesh) {
 	if (nMG_PostSmooth == 0) return 0;
 	else return MG_PostSmooth[val_mesh];
 }
 
-inline unsigned short CConfig::GetMG_CorrecSmooth(unsigned short val_mesh) { 
+inline unsigned short CConfig::GetMG_CorrecSmooth(unsigned short val_mesh) {
 	if (nMG_CorrecSmooth == 0) return 0;
-	else return MG_CorrecSmooth[val_mesh]; 
+	else return MG_CorrecSmooth[val_mesh];
 }
 
 inline unsigned long CConfig::GetWrt_Sol_Freq(void) { return Wrt_Sol_Freq; }
@@ -675,7 +689,7 @@ inline unsigned short CConfig::GetKind_GasModel(void) { return Kind_GasModel; }
 
 inline unsigned short CConfig::GetKind_FluidModel(void) { return Kind_FluidModel; }
 
-inline unsigned short CConfig::GetKind_FreeStreamOption(void) { return Kind_FreeStreamOption; } 
+inline unsigned short CConfig::GetKind_FreeStreamOption(void) { return Kind_FreeStreamOption; }
 
 inline unsigned short CConfig::GetKind_InitOption(void) { return Kind_InitOption; }
 
@@ -1244,7 +1258,7 @@ inline bool CConfig::GetPoissonSolver(void) { return PoissonSolver; }
 
 inline bool CConfig::Low_Mach_Preconditioning(void) { return Low_Mach_Precon; }
 
-inline bool CConfig::Low_Mach_Correction(void) { return Low_Mach_Corr; } 
+inline bool CConfig::Low_Mach_Correction(void) { return Low_Mach_Corr; }
 
 inline bool CConfig::GetGravityForce(void) { return GravityForce; }
 
